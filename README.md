@@ -1,11 +1,14 @@
 **SMS PROJECT**
 
 在app/src/main/java/com/example/myapplication可以找到以下檔案：
-------------------------------------------------
+
 MainActivity 功能：客戶端
+
 MyService 功能：後台
+
 SmsReceiver 功能：接收機
-------------------------------------------------
+
+
 系統概述：客戶端可以使用sms後台聯絡，並且利用接收機接收後台的sms訊息。
 
 1.客戶傳sms給接收機，告知進入車廂。
