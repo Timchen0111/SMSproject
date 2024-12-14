@@ -125,7 +125,5 @@ public class MainActivity extends AppCompatActivity {
 
     }
 }
-git config --global user.email "timchen910111@gmail.com"
-git config --global user.name "Tim Chen"
 
 
