@@ -5,6 +5,7 @@ import static android.app.Service.START_STICKY;
 import android.Manifest;
 import android.content.ComponentName;
 import android.content.Context;
+
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
@@ -103,26 +104,45 @@ public class MainActivity extends AppCompatActivity {
         return ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED;
     }
 
-    public void Report(View view) {
+    public void Arrive(View view) {
         String phoneNumber = phoneEditText.getText().toString().trim();
-        String message = messageEditText.getText().toString().trim();
-
-        if (phoneNumber.isEmpty() || message.isEmpty()) {
-            Toast.makeText(this, "請輸入回報內容", Toast.LENGTH_SHORT).show();
-            return;
+        //String message = messageEditText.getText().toString().trim();
+        if (phoneNumber.isEmpty()) {
+          Toast.makeText(this, "請先輸入手機號碼！", Toast.LENGTH_SHORT).show();
+          return;
         }
         // 在 Activity 中發送 Intent
 // 在 Activity 中發送 Intent 並傳遞資料
         Intent serviceIntent = new Intent(this, MyService.class);
-        serviceIntent.setAction("com.example.MY_ACTION");
-
+        serviceIntent.setAction("Arrive");
 // 傳遞資料（變數）
-        serviceIntent.putExtra("message", message);
+        // serviceIntent.putExtra("message", message);
         serviceIntent.putExtra("number", phoneNumber);
-
 // 啟動 Service
         startService(serviceIntent);
+    }
 
+    public void Departure(View view) {
+        String phoneNumber = phoneEditText.getText().toString().trim();
+        if (phoneNumber.isEmpty()) {
+            Toast.makeText(this, "請先輸入手機號碼！", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Intent serviceIntent = new Intent(this, MyService.class);
+        serviceIntent.setAction("Departure");
+        serviceIntent.putExtra("number", phoneNumber);
+        startService(serviceIntent);
+    }
+    public void Response(View view) {
+        String phoneNumber = phoneEditText.getText().toString().trim();
+        if (phoneNumber.isEmpty()) {
+            Toast.makeText(this, "請先輸入手機號碼！", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Intent serviceIntent = new Intent(this, MyService.class);
+        serviceIntent.setAction("Response");
+        serviceIntent.putExtra("number", phoneNumber);
+        startService(serviceIntent);
     }
 }
 

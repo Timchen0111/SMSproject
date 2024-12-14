@@ -32,11 +32,22 @@ public class MyService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null && intent.getAction() != null) {
             // 根據 intent 的 action 來決定呼叫哪個方法
-            if ("com.example.MY_ACTION".equals(intent.getAction())) {
-                // 取出從 Activity 傳遞過來的變數
-                String message = intent.getStringExtra("message");
+            if ("Arrive".equals(intent.getAction())) {
+                // 實作部分（處理新乘客）
                 String number = intent.getStringExtra("number");
-                // String number = intent.getIntExtra("number");  // 這是設定預設值 0
+                String message = "test."; //暫時
+                sendSMS(number,message);
+            }
+            if ("Departure".equals(intent.getAction())) {
+                // 實作部分（處理離開的乘客）
+                String number = intent.getStringExtra("number");
+                String message = "test2."; //暫時
+                sendSMS(number,message);
+            }
+            if ("Response".equals(intent.getAction())) {
+                // 乘客回應已到達指定車廂
+                String number = intent.getStringExtra("number");
+                String message = "test3."; //暫時
                 sendSMS(number,message);
             }
         }
