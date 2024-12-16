@@ -33,7 +33,7 @@ public class MyService extends Service {
     public void sendSMS(String phoneNumber, String message) {
         SmsManager smsManager = SmsManager.getDefault();
         smsManager.sendTextMessage(phoneNumber, null, message, null, null);
-        Toast.makeText(this, "SMS sent: " + message, Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this, "SMS sent: " + message, Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -105,7 +105,7 @@ public class MyService extends Service {
         //System.out.println("Passenger left carriage: " + carriage);
         //System.out.println("Updated carriage count: " + carriages);
         // send SMS when passenger leaves
-        sendSMS(sender, "已離開列車.");
+        sendSMS(sender, "已離開列車");
     }
 
     // 修改 func() 方法來接收參數(search for the carriage with the least passengers)
