@@ -15,8 +15,11 @@ import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,9 +28,10 @@ import androidx.core.content.ContextCompat;
 
 public class MainActivity extends AppCompatActivity {
     private static final int SEND_SMS_PERMISSION_REQUEST_CODE = 1;
-    private EditText phoneEditText, messageEditText;
+    private EditText phoneEditText;
     private Button sendButton;
     private MyService myService;
+    private String selectedOption;
 
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null && intent.getAction() != null) {
@@ -55,50 +59,38 @@ public class MainActivity extends AppCompatActivity {
 
         // 初始化元件
         phoneEditText = findViewById(R.id.phn);
-        messageEditText = findViewById(R.id.msg);
-        sendButton = findViewById(R.id.btn);
 
         // 檢查並請求發送簡訊權限
         if (!checkPermission(Manifest.permission.SEND_SMS)) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.SEND_SMS}, SEND_SMS_PERMISSION_REQUEST_CODE);
         }
 
+        Spinner spinner = findViewById(R.id.spinner);
 
+        // 建立選單資料
+        String[] options = {"1", "2", "3", "4", "5", "6"};
 
-        // 設置按鈕點擊事件
-        sendButton.setOnClickListener(new View.OnClickListener() {
+        // 建立 ArrayAdapter 並綁定到 Spinner
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, options);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+
+        // 設定選擇監聽器
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
-            public void onClick(View v) {
-                sendSms();
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                selectedOption = options[position];
+                Toast.makeText(MainActivity.this, "你選擇了：" + selectedOption, Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // 當沒有選擇任何項目時
+                Toast.makeText(MainActivity.this, "你沒有選擇。" , Toast.LENGTH_SHORT).show();
             }
         });
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.SEND_SMS}, 1);
-        }
-
     }
 
-    private void sendSms() {
-        String phoneNumber = phoneEditText.getText().toString().trim();
-        String message = messageEditText.getText().toString().trim();
-
-        if (phoneNumber.isEmpty() || message.isEmpty()) {
-            Toast.makeText(this, "請輸入電話號碼和訊息內容", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        if (checkPermission(Manifest.permission.SEND_SMS)) {
-            try {
-                SmsManager smsManager = SmsManager.getDefault();
-                smsManager.sendTextMessage(phoneNumber, null, message, null, null);
-                Toast.makeText(this, "簡訊已成功發送", Toast.LENGTH_SHORT).show();
-            } catch (Exception e) {
-                Toast.makeText(this, "發送簡訊時發生錯誤: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        } else {
-            Toast.makeText(this, "無法發送簡訊，請檢查權限", Toast.LENGTH_SHORT).show();
-        }
-    }
 
     private boolean checkPermission(String permission) {
         return ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED;
@@ -106,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void Arrive(View view) {
         String phoneNumber = phoneEditText.getText().toString().trim();
-        String carriage = messageEditText.getText().toString().trim();
+        //String carriage = messageEditText.getText().toString().trim();
         if (phoneNumber.isEmpty()) {
           Toast.makeText(this, "請先輸入手機號碼！", Toast.LENGTH_SHORT).show();
           return;
@@ -116,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
         Intent serviceIntent = new Intent(this, MyService.class);
         serviceIntent.setAction("Arrive");
 // 傳遞資料（變數）
-        serviceIntent.putExtra("carriage", carriage);
+        serviceIntent.putExtra("carriage",selectedOption);
         serviceIntent.putExtra("number", phoneNumber);
 // 啟動 Service
         startService(serviceIntent);
