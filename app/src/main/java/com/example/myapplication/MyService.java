@@ -13,8 +13,8 @@ import java.util.Map;
 public class MyService extends Service {
 
     private Map<String, Integer> carriages = new HashMap<>();
-    private Map<String,String> passengers = new HashMap<>();
-    private Map<String,String> suggest = new HashMap<>();
+    private Map<String,String> passengers = new HashMap<>(); //紀錄使用者和其所在車廂
+    private Map<String,String> suggest = new HashMap<>(); //記錄使用者和建議前往車廂
     @Override
 
     public void onCreate() {
@@ -35,13 +35,6 @@ public class MyService extends Service {
         Toast.makeText(this, "SMS sent: " + message, Toast.LENGTH_SHORT).show();
     }
 
-    // 這個方法可以用來處理接收短信的邏輯
-    // 您可以在適當的地方觸發此方法來處理從模擬器收到的短信
-    public void receiveSMS(Intent intent) {
-        // 從 intent 中獲取短信內容
-        String message = intent.getStringExtra("sms_body");
-        Toast.makeText(this, "Received SMS: " + message, Toast.LENGTH_SHORT).show();
-    }
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null && intent.getAction() != null) {
@@ -62,13 +55,14 @@ public class MyService extends Service {
                 String NewCarriage = suggest.get(sender);
                 String OldCarriage = passengers.get(sender);
                 passengers.put(sender,NewCarriage);
+                // 更改車廂人數紀錄
                 Integer CurrentCount = carriages.getOrDefault(NewCarriage, 0);
                 carriages.put(NewCarriage,CurrentCount+1);
                 CurrentCount = carriages.getOrDefault(OldCarriage, 0);
                 carriages.put(OldCarriage,CurrentCount-1);
-                suggest.remove(sender);
+                //回應使用者
                 String number = intent.getStringExtra("number");
-                String message = "系統已收到通知！"; //暫時
+                String message = "系統已收到通知！";
                 sendSMS(number,message);
             }
         }
@@ -83,12 +77,14 @@ public class MyService extends Service {
         // tell the arriving passenger which carriage has the least number of passengers
         String leastFullCarriage = getLeastFullCarriage(carriage);
         // 印出測試資訊
-        System.out.println("Passenger entered carriage: " + carriage);
-        System.out.println("Updated carriage count: " + carriages);
-        System.out.println("Carriage with minimum passengers: " + leastFullCarriage);
+        //System.out.println("Passenger entered carriage: " + carriage);
+        //System.out.println("Updated carriage count: " + carriages);
+        //System.out.println("Carriage with minimum passengers: " + leastFullCarriage);
         passengers.put(sender,carriage);
         suggest.put(sender,leastFullCarriage);
-        sendSMS(sender, "you have entered " + carriage + "，the carriage with minimum passengers is " + leastFullCarriage);
+        //System.out.println("Passenger INFO: " + passengers);
+        //System.out.println("Suggest INFO: " + suggest);
+        sendSMS(sender, "you have entered " + carriage + ",the carriage with minimum passengers is" + leastFullCarriage);
     }
 
     private void handleCustomerExit(String sender) {
@@ -99,14 +95,13 @@ public class MyService extends Service {
             carriages.put(carriage, currentCount - 1);
         }
         passengers.remove(sender);
+        suggest.remove(sender);
         // 印出測試資訊
-        System.out.println("Passenger left carriage: " + carriage);
-        System.out.println("Updated carriage count: " + carriages);
+        //System.out.println("Passenger left carriage: " + carriage);
+        //System.out.println("Updated carriage count: " + carriages);
         // send SMS when passenger leaves
         sendSMS(sender, "you leave the carriage.");
     }
-
-
 
     // 修改 func() 方法來接收參數(search for the carriage with the least passengers)
     private String getLeastFullCarriage(String carriage) {
