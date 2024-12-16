@@ -29,25 +29,39 @@ public class MyService extends Service {
     private DatabaseReference passengersRef;
     private DatabaseReference suggestRef;
 
+    @Override
     public void onCreate() {
-
-        // 初始化每個車廂的人數
-        carriages.put("Carriage 1", 0);
-        carriages.put("Carriage 2", 0);
-        carriages.put("Carriage 3", 0);
-        carriages.put("Carriage 4", 0);
-        carriages.put("Carriage 5", 0);
-        carriages.put("Carriage 6", 0);
-        // 使用 Firebase 存儲數據
-
         FirebaseDatabase database = FirebaseDatabase.getInstance("https://smsapp-3e781-default-rtdb.firebaseio.com/");
         mDatabase = database.getReference();
         carriagesRef = mDatabase.child("carriages");
         passengersRef = mDatabase.child("passengers");
         suggestRef = mDatabase.child("suggest");
 
+        // 初始化車廂資料僅當節點不存在時
+        carriagesRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
 
+                    // 只有在節點不存在時才初始化
+                    Map<String, Integer> initialCarriages = new HashMap<>();
+                    initialCarriages.put("Carriage 1", 0);
+                    initialCarriages.put("Carriage 2", 0);
+                    initialCarriages.put("Carriage 3", 0);
+                    initialCarriages.put("Carriage 4", 0);
+                    initialCarriages.put("Carriage 5", 0);
+                    initialCarriages.put("Carriage 6", 0);
+                    carriagesRef.setValue(initialCarriages);
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Log.e("Firebase", "Error initializing data", databaseError.toException());
+            }
+        });
+        addValueEventListener();
     }
+
 
     // 用於發送短信的方法
     public void sendSMS(String phoneNumber, String message) {
@@ -58,6 +72,7 @@ public class MyService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        addValueEventListener();
         if (intent != null && intent.getAction() != null) {
             // 根據 intent 的 action 來決定呼叫哪個方法
             String sender = intent.getStringExtra("number"); // 接收發送者的號碼
@@ -165,43 +180,80 @@ public class MyService extends Service {
         return leastFullCarriage;
     }
     // 添加監聽器，實時更新本地數據
+    // 本地儲存車廂資料的 HashMap
+
     private void addValueEventListener() {
         // 監聽車廂人數變動
+        System.out.println("Listening for carriage updates...");
+
         carriagesRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                // 車廂人數已經變更，這裡你可以更新本地資料結構
-                for (DataSnapshot carriageSnapshot : dataSnapshot.getChildren()) {
-                    String carriageName = carriageSnapshot.getKey();
-                    Integer numberOfPassengers = carriageSnapshot.getValue(Integer.class);
-                    // 處理車廂資料，可能是更新本地 UI 或紀錄
-                    Log.d("Firebase", carriageName + " has " + numberOfPassengers + " passengers.");
+                // 清空本地資料，確保資料與 Firebase 同步
+                carriages.clear();
+
+                // 確認是否有資料
+                if (dataSnapshot.exists()) {
+                    // 遍歷所有車廂節點
+                    for (DataSnapshot carriageSnapshot : dataSnapshot.getChildren()) {
+                        // 取得車廂名稱
+                        String carriageName = carriageSnapshot.getKey();
+
+                        // 嘗試取得車廂內乘客人數
+                        Integer numberOfPassengers = carriageSnapshot.getValue(Integer.class);
+
+                        // 檢查數據是否為 null，避免空指標例外
+                        if (numberOfPassengers != null) {
+                            // 將資料存入 HashMap
+                            carriages.put(carriageName, numberOfPassengers);
+                            Log.d("Firebase", "Updated: " + carriageName + " has " + numberOfPassengers + " passengers.");
+                        } else {
+                            Log.w("Firebase", "No passenger data for carriage: " + carriageName);
+                        }
+                    }
+
+                    // Log 本地 HashMap 的最新狀態
+                    Log.d("Firebase", "Current carriages data: " + carriages.toString());
+                } else {
+                    Log.w("Firebase", "No data exists at carriagesRef.");
                 }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                // 處理錯誤，例如網路問題或權限不足
+                Log.e("Firebase", "Error reading data", databaseError.toException());
+            }
+        });
+
+        passengersRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                // 清空本地乘客資料，確保與 Firebase 資料同步
+                passengers.clear();
+
+                // 更新乘客資料
+                for (DataSnapshot passengerSnapshot : dataSnapshot.getChildren()) {
+                    String userId = passengerSnapshot.getKey();
+                    String carriage = passengerSnapshot.getValue(String.class);
+
+                    // 將乘客資料更新至本地結構
+                    if (userId != null && carriage != null) {
+                        passengers.put(userId, carriage);
+                        Log.d("Firebase", "Updated: " + userId + " is in " + carriage);
+                    } else {
+                        Log.w("Firebase", "Invalid passenger data for userId: " + userId);
+                    }
+                }
+
+                // 確認同步後的乘客資料
+                Log.d("Firebase", "Current passengers data: " + passengers.toString());
             }
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
                 // 處理錯誤
-                Log.e("Firebase", "Error reading data", databaseError.toException());
-            }
-        });
-
-        // 監聽乘客變動
-        passengersRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                // 乘客資料變動，更新本地資料結構
-                for (DataSnapshot passengerSnapshot : dataSnapshot.getChildren()) {
-                    String userId = passengerSnapshot.getKey();
-                    String carriage = passengerSnapshot.getValue(String.class);
-                    // 處理乘客資料，更新 UI 或其他操作
-                    Log.d("Firebase", userId + " is in " + carriage);
-                }
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                Log.e("Firebase", "Error reading data", databaseError.toException());
+                Log.e("Firebase", "Error reading passenger data", databaseError.toException());
             }
         });
 
@@ -209,18 +261,31 @@ public class MyService extends Service {
         suggestRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                // 乘客建議車廂資料變動
+                // 清空本地建議車廂資料
+                suggest.clear();
+
+                // 更新建議車廂資料
                 for (DataSnapshot suggestSnapshot : dataSnapshot.getChildren()) {
                     String userId = suggestSnapshot.getKey();
                     String suggestedCarriage = suggestSnapshot.getValue(String.class);
-                    // 處理建議車廂資料
-                    Log.d("Firebase", userId + " is suggested to go to " + suggestedCarriage);
+
+                    // 將建議資料更新至本地結構
+                    if (userId != null && suggestedCarriage != null) {
+                        suggest.put(userId, suggestedCarriage);
+                        Log.d("Firebase", "Updated: " + userId + " is suggested to go to " + suggestedCarriage);
+                    } else {
+                        Log.w("Firebase", "Invalid suggestion data for userId: " + userId);
+                    }
                 }
+
+                // 確認同步後的建議車廂資料
+                Log.d("Firebase", "Current suggestions data: " + suggest.toString());
             }
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
-                Log.e("Firebase", "Error reading data", databaseError.toException());
+                // 處理錯誤
+                Log.e("Firebase", "Error reading suggestion data", databaseError.toException());
             }
         });
     }
