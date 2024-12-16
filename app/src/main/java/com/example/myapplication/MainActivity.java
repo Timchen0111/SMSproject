@@ -106,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void Arrive(View view) {
         String phoneNumber = phoneEditText.getText().toString().trim();
-        //String message = messageEditText.getText().toString().trim();
+        String carriage = messageEditText.getText().toString().trim();
         if (phoneNumber.isEmpty()) {
           Toast.makeText(this, "請先輸入手機號碼！", Toast.LENGTH_SHORT).show();
           return;
@@ -116,7 +116,7 @@ public class MainActivity extends AppCompatActivity {
         Intent serviceIntent = new Intent(this, MyService.class);
         serviceIntent.setAction("Arrive");
 // 傳遞資料（變數）
-        // serviceIntent.putExtra("message", message);
+        serviceIntent.putExtra("carriage", carriage);
         serviceIntent.putExtra("number", phoneNumber);
 // 啟動 Service
         startService(serviceIntent);

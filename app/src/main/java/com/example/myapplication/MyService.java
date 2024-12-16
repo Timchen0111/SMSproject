@@ -7,15 +7,14 @@ import android.util.Log;
 import android.widget.Toast;
 import android.telephony.SmsManager;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class MyService extends Service {
-    
+
     private Map<String, Integer> carriages = new HashMap<>();
-    
+
     @Override
-    public void onCreate() {
-        super.onCreate();
-        // 初始化服務時可執行的初始化工作
-    }
 
     public void onCreate() {
         super.onCreate();
@@ -27,7 +26,7 @@ public class MyService extends Service {
         carriages.put("Carriage 5", 0);
         carriages.put("Carriage 6", 0);
     }
-    
+
     // 用於發送短信的方法
     public void sendSMS(String phoneNumber, String message) {
         SmsManager smsManager = SmsManager.getDefault();
@@ -46,50 +45,56 @@ public class MyService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null && intent.getAction() != null) {
             // 根據 intent 的 action 來決定呼叫哪個方法
+            String sender = intent.getStringExtra("number"); // 接收發送者的號碼
+            String carriage = intent.getStringExtra("carriage"); // 接收車廂名稱
+            carriage = "Carriage " + carriage;
             if ("Arrive".equals(intent.getAction())) {
                 // 實作部分（處理新乘客）
-                private void handleCustomerEnteringCarriage(String sender, String carriage) {
-                    Integer currentCount = carriages.get(carriage);
-                    if (currentCount != null) {
-                        carriages.put(carriage, currentCount + 1);
-                    }
-                // tell the arriving passenger which carriage has the least number of passengers
-                String leastFullCarriage = getLeastFullCarriage();
-                sendSMS(sender, "you have entered " + carriage + "，the carriage with minimum passengers is " + leastFullCarriage);
-                }
-
-
-                String number = intent.getStringExtra("number");
-                String message = "test."; //暫時
-                sendSMS(number,message);
+                handleCustomerEnteringCarriage(sender,carriage);
             }
             if ("Departure".equals(intent.getAction())) {
                 // 實作部分（處理離開的乘客）
-                private void handleCustomerExit(String sender, String carriage) {
-                    // passenger leaves a carriage
-                    Integer currentCount = carriages.get(carriage);
-                    if (currentCount != null && currentCount > 0) {
-                        carriages.put(carriage, currentCount - 1);
-                    }
-
-                    // send SMS when passenger leaves
-                    sendSMS(sender, "you leave the carriage.");
-                }
-
-                String number = intent.getStringExtra("number");
-                String message = "test2."; //暫時
-                sendSMS(number,message);
+                handleCustomerExit(sender,carriage);
             }
             if ("Response".equals(intent.getAction())) {
                 // 乘客回應已到達指定車廂
 
                 String number = intent.getStringExtra("number");
-                String message = "test3."; //暫時
+                String message = "系統已收到通知！"; //暫時
                 sendSMS(number,message);
             }
         }
         return START_STICKY; // 返回該服務的啟動方式
     }
+
+    private void handleCustomerEnteringCarriage(String sender, String carriage) {
+        Integer currentCount = carriages.getOrDefault(carriage, 0);
+        if (currentCount != null) {
+            carriages.put(carriage, currentCount + 1);
+        }
+        // tell the arriving passenger which carriage has the least number of passengers
+        String leastFullCarriage = getLeastFullCarriage();
+        // 印出測試資訊
+        System.out.println("Passenger entered carriage: " + carriage);
+        System.out.println("Updated carriage count: " + carriages);
+        System.out.println("Carriage with minimum passengers: " + leastFullCarriage);
+        sendSMS(sender, "you have entered " + carriage + "，the carriage with minimum passengers is " + leastFullCarriage);
+    }
+
+    private void handleCustomerExit(String sender, String carriage) {
+        // passenger leaves a carriage
+        Integer currentCount = carriages.get(carriage);
+        if (currentCount != null && currentCount > 0) {
+            carriages.put(carriage, currentCount - 1);
+        }
+        // 印出測試資訊
+        System.out.println("Passenger left carriage: " + carriage);
+        System.out.println("Updated carriage count: " + carriages);
+        // send SMS when passenger leaves
+        sendSMS(sender, "you leave the carriage.");
+    }
+
+
 
     // 修改 func() 方法來接收參數(search for the carriage with the least passengers)
     private String getLeastFullCarriage() {
@@ -102,7 +107,6 @@ public class MyService extends Service {
                 leastFullCarriage = entry.getKey();
             }
         }
-
         return leastFullCarriage;
     }
 
