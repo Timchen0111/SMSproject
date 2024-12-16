@@ -13,7 +13,8 @@ import java.util.Map;
 public class MyService extends Service {
 
     private Map<String, Integer> carriages = new HashMap<>();
-
+    private Map<String,String> passengers = new HashMap<>();
+    private Map<String,String> suggest = new HashMap<>();
     @Override
 
     public void onCreate() {
@@ -54,11 +55,18 @@ public class MyService extends Service {
             }
             if ("Departure".equals(intent.getAction())) {
                 // 實作部分（處理離開的乘客）
-                handleCustomerExit(sender,carriage);
+                handleCustomerExit(sender);
             }
             if ("Response".equals(intent.getAction())) {
                 // 乘客回應已到達指定車廂
-
+                String NewCarriage = suggest.get(sender);
+                String OldCarriage = passengers.get(sender);
+                passengers.put(sender,NewCarriage);
+                Integer CurrentCount = carriages.getOrDefault(NewCarriage, 0);
+                carriages.put(NewCarriage,CurrentCount+1);
+                CurrentCount = carriages.getOrDefault(OldCarriage, 0);
+                carriages.put(OldCarriage,CurrentCount-1);
+                suggest.remove(sender);
                 String number = intent.getStringExtra("number");
                 String message = "系統已收到通知！"; //暫時
                 sendSMS(number,message);
@@ -78,15 +86,19 @@ public class MyService extends Service {
         System.out.println("Passenger entered carriage: " + carriage);
         System.out.println("Updated carriage count: " + carriages);
         System.out.println("Carriage with minimum passengers: " + leastFullCarriage);
+        passengers.put(sender,carriage);
+        suggest.put(sender,leastFullCarriage);
         sendSMS(sender, "you have entered " + carriage + "，the carriage with minimum passengers is " + leastFullCarriage);
     }
 
-    private void handleCustomerExit(String sender, String carriage) {
+    private void handleCustomerExit(String sender) {
         // passenger leaves a carriage
+        String carriage = passengers.get(sender);
         Integer currentCount = carriages.get(carriage);
         if (currentCount != null && currentCount > 0) {
             carriages.put(carriage, currentCount - 1);
         }
+        passengers.remove(sender);
         // 印出測試資訊
         System.out.println("Passenger left carriage: " + carriage);
         System.out.println("Updated carriage count: " + carriages);
