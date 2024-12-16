@@ -73,7 +73,7 @@ public class MyService extends Service {
             carriages.put(carriage, currentCount + 1);
         }
         // tell the arriving passenger which carriage has the least number of passengers
-        String leastFullCarriage = getLeastFullCarriage();
+        String leastFullCarriage = getLeastFullCarriage(carriage);
         // 印出測試資訊
         System.out.println("Passenger entered carriage: " + carriage);
         System.out.println("Updated carriage count: " + carriages);
@@ -97,16 +97,21 @@ public class MyService extends Service {
 
 
     // 修改 func() 方法來接收參數(search for the carriage with the least passengers)
-    private String getLeastFullCarriage() {
+    private String getLeastFullCarriage(String carriage) {
         String leastFullCarriage = null;
+        Integer CurrentNum =  carriages.getOrDefault(carriage, 0);
         int minCount = Integer.MAX_VALUE;
-
         for (Map.Entry<String, Integer> entry : carriages.entrySet()) {
             if (entry.getValue() < minCount) {
                 minCount = entry.getValue();
                 leastFullCarriage = entry.getKey();
             }
         }
+        //程式邏輯：當人數皆相同時，讓使用者留在原本的車廂即可。
+        if (CurrentNum - minCount < 2){
+            leastFullCarriage = carriage;
+        }
+
         return leastFullCarriage;
     }
 
@@ -114,6 +119,4 @@ public class MyService extends Service {
     public IBinder onBind(Intent intent) {
         return null; // 如果不需要綁定服務，返回 null
     }
-
-
 }
