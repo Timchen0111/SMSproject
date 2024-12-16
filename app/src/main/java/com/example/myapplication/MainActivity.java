@@ -68,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
         Spinner spinner = findViewById(R.id.spinner);
 
         // 建立選單資料
-        String[] options = {"1", "2", "3", "4", "5", "6"};
+        String[] options = {"未上車","1", "2", "3", "4", "5", "6"};
 
         // 建立 ArrayAdapter 並綁定到 Spinner
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, options);
@@ -108,7 +108,9 @@ public class MainActivity extends AppCompatActivity {
         Intent serviceIntent = new Intent(this, MyService.class);
         serviceIntent.setAction("Arrive");
 // 傳遞資料（變數）
-        serviceIntent.putExtra("carriage",selectedOption);
+        if (selectedOption != "未上車") {
+            serviceIntent.putExtra("carriage", selectedOption);
+        }
         serviceIntent.putExtra("number", phoneNumber);
 // 啟動 Service
         startService(serviceIntent);
