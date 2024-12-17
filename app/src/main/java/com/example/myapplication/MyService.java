@@ -37,28 +37,7 @@ public class MyService extends Service {
         passengersRef = mDatabase.child("passengers");
         suggestRef = mDatabase.child("suggest");
 
-        // 初始化車廂資料僅當節點不存在時
-        carriagesRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
 
-                    // 只有在節點不存在時才初始化
-                    Map<String, Integer> initialCarriages = new HashMap<>();
-                    initialCarriages.put("Carriage 1", 0);
-                    initialCarriages.put("Carriage 2", 0);
-                    initialCarriages.put("Carriage 3", 0);
-                    initialCarriages.put("Carriage 4", 0);
-                    initialCarriages.put("Carriage 5", 0);
-                    initialCarriages.put("Carriage 6", 0);
-                    carriagesRef.setValue(initialCarriages);
-
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                Log.e("Firebase", "Error initializing data", databaseError.toException());
-            }
-        });
         addValueEventListener();
     }
 
@@ -73,6 +52,7 @@ public class MyService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         addValueEventListener();
+
         if (intent != null && intent.getAction() != null) {
             // 根據 intent 的 action 來決定呼叫哪個方法
             String sender = intent.getStringExtra("number"); // 接收發送者的號碼
@@ -102,7 +82,7 @@ public class MyService extends Service {
                 // 更改車廂人數紀錄
                 Integer CurrentCount = carriages.getOrDefault(NewCarriage, 0);
                 carriages.put(NewCarriage,CurrentCount+1);
-//                CurrentCount = carriages.getOrDefault(OldCarriage, 0);
+                CurrentCount = carriages.getOrDefault(OldCarriage, 0);
                 carriages.put(OldCarriage,CurrentCount-1);
                 //回應使用者
                 String number = intent.getStringExtra("number");
@@ -183,6 +163,56 @@ public class MyService extends Service {
     // 本地儲存車廂資料的 HashMap
 
     private void addValueEventListener() {
+        // 初始化車廂資料僅當節點不存在時
+        carriagesRef.addListenerForSingleValueEvent(new ValueEventListener() {
+
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                // 定義完整的初始車廂資料
+                Map<String, Integer> initialCarriages = new HashMap<>();
+                initialCarriages.put("Carriage 1", 0);
+                initialCarriages.put("Carriage 2", 0);
+                initialCarriages.put("Carriage 3", 0);
+                initialCarriages.put("Carriage 4", 0);
+                initialCarriages.put("Carriage 5", 0);
+                initialCarriages.put("Carriage 6", 0);
+
+                // 用來記錄 Firebase 中是否有缺少項目
+                boolean needsUpdate = false;
+
+                // 檢查 Firebase 的資料，並移除已存在的項目
+                for (DataSnapshot carriageSnapshot : dataSnapshot.getChildren()) {
+                    String carriageName = carriageSnapshot.getKey();
+                    if (initialCarriages.containsKey(carriageName)) {
+                        initialCarriages.remove(carriageName); // 移除已存在的車廂
+                    }
+                }
+
+                // 如果有項目仍存在於 initialCarriages，代表資料缺失，需要更新
+                if (!initialCarriages.isEmpty()) {
+                    needsUpdate = true;
+                    // 將缺失的車廂項目補回 Firebase
+                    carriagesRef.updateChildren((Map<String, Object>) (Map) initialCarriages)
+                            .addOnSuccessListener(aVoid -> Log.d("Firebase", "Missing carriages initialized successfully."))
+                            .addOnFailureListener(e -> Log.e("Firebase", "Failed to initialize missing carriages", e));
+                }
+
+                if (needsUpdate) {
+                    System.out.println("Missing carriages have been initialized.");
+                } else {
+                    System.out.println("All carriages are present. No initialization needed.");
+                }
+            }
+
+
+
+
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Log.e("Firebase", "Error initializing data", databaseError.toException());
+            }
+        });
         // 監聽車廂人數變動
         System.out.println("Listening for carriage updates...");
 
